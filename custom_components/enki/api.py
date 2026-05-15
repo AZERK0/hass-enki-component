@@ -14,7 +14,12 @@ from .const import (
     ENKI_BFF_API_KEY,
     ENKI_NODE_API_KEY,
     ENKI_REFERENTIEL_API_KEY,
-    ENKI_LIGHTS_API_KEY)
+    ENKI_LIGHTS_API_KEY,
+    ENKI_TEMP_HUMIDITY_API_KEY,
+    ENKI_PRESENCE_API_KEY,
+    ENKI_BATTERY_API_KEY,
+    ENKI_LUMINOSITY_API_KEY,
+    ENKI_POWER_API_KEY)
 
 proxy = None
 ENKI_USER_AGENT = "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0"
@@ -162,6 +167,12 @@ class API:
         if device["type"] == "lights" and device["isEnabled"]:
             light_details = await self.get_light_details(device.get("homeId"), device.get("nodeId"))
             self.merge_properties(device, light_details)
+        elif device["type"] == "sensors" and device["isEnabled"]:
+            sensor_details = await self.get_sensor_details(device.get("homeId"), device.get("nodeId"), device.get("capabilities", []))
+            self.merge_properties(device, sensor_details)
+        elif "switch_electrical_power" in device.get("capabilities", []) and device["isEnabled"]:
+            power_details = await self.get_power_details(device.get("homeId"), device.get("nodeId"))
+            self.merge_properties(device, power_details)
         return device
 
     async def get_node(self, home_id, node_id):
@@ -243,6 +254,78 @@ class API:
                     LOGGER.debug(resp.status)
                     LOGGER.error("Error on change_light_state. status %s, response %s", resp.status, str(response))
                     raise ValueError("bad credentials")
+
+    async def get_sensor_details(self, home_id, node_id, capabilities):
+        """Get multi-sensor state (temperature, humidity, presence, luminosity, battery)."""
+        await self.check_connected()
+        result = {}
+
+        async def _get(path, api_key):
+            async with _session() as session, session.request(
+                method="GET",
+                url=f"{ENKI_URL}{path}",
+                headers={"Authorization": f"{self._token_type} {self._access_token}",
+                         "homeId": home_id,
+                         "X-Gateway-APIKey": api_key},
+                proxy=proxy,) as resp:
+                    if resp.status == 200:
+                        return await resp.json()
+                    else:
+                        LOGGER.warning("get_sensor_details %s skipped: status %s", path, resp.status)
+                        return {}
+
+        if "check_current_temperature" in capabilities or "check_current_humidity" in capabilities:
+            data = await _get(f"/api-enki-temperature-humidity-sensor-prod/v1/sensors/{node_id}/check-current-humidity", ENKI_TEMP_HUMIDITY_API_KEY)
+            result.update(data)
+
+        if "check_motion_detection" in capabilities:
+            data = await _get(f"/api-enki-presence-detector-prod/v1/sensors/{node_id}/check-motion-detection", ENKI_PRESENCE_API_KEY)
+            result.update(data)
+
+        if "check_illuminance_level" in capabilities:
+            data = await _get(f"/api-enki-luminosity-sensor-prod/v1/sensors/{node_id}/check-illuminance-level", ENKI_LUMINOSITY_API_KEY)
+            result.update(data)
+
+        if "check_battery_health" in capabilities:
+            data = await _get(f"/api-enki-battery-health-prod/v1/sensors/{node_id}/check-battery-health", ENKI_BATTERY_API_KEY)
+            result.update(data)
+
+        LOGGER.debug("get_sensor_details %s: %s", node_id, result)
+        return result
+
+    async def get_power_details(self, home_id, node_id):
+        """Get power outlet state."""
+        await self.check_connected()
+        async with _session() as session, session.request(
+            method="GET",
+            url=f"{ENKI_URL}/api-enki-power-prod/v1/power/{node_id}/check-electrical-power",
+            headers={"Authorization": f"{self._token_type} {self._access_token}",
+                     "homeId": home_id,
+                     "X-Gateway-APIKey": ENKI_POWER_API_KEY},
+            proxy=proxy,) as resp:
+                if resp.status == 200:
+                    response = await resp.json()
+                    LOGGER.debug("get_power_details : %s", response)
+                    return response
+                else:
+                    LOGGER.warning("get_power_details skipped for node %s: status %s", node_id, resp.status)
+                    return {}
+
+    async def change_power_state(self, home_id, node_id, power_on: bool):
+        """Turn power outlet on or off."""
+        await self.check_connected()
+        async with _session() as session, session.request(
+            method="POST",
+            url=f"{ENKI_URL}/api-enki-power-prod/v1/power/{node_id}/switch-electrical-power",
+            headers={"Authorization": f"{self._token_type} {self._access_token}",
+                     "homeId": home_id,
+                     "X-Gateway-APIKey": ENKI_POWER_API_KEY},
+            proxy=proxy,
+            json={"value": "ON" if power_on else "OFF"}) as resp:
+                if resp.status not in (200, 202):
+                    response = await resp.json()
+                    LOGGER.error("Error on change_power_state. status %s, response %s", resp.status, str(response))
+                    raise ValueError("change_power_state failed")
 
 # *******************************************************
 
