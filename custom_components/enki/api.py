@@ -152,7 +152,7 @@ class API:
                         device_info = await self.get_device(device.get("deviceId"))
                         self.merge_properties(device, device_info)
 
-                        await self.refresh_device(device, full=True)
+                        await self.refresh_device(device)
 
                         LOGGER.debug("device : " + repr(device))
                 return devices
@@ -341,13 +341,20 @@ class API:
         devices = []
         for home in homes:
             devices.extend(await self.get_items_in_section_for_home(home))
-        # Preserve lastReportedValue from previous fetch to avoid overwriting local state
-        if hasattr(self, '_devices_cache'):
+
+        is_first_load = not hasattr(self, '_devices_cache')
+        if is_first_load:
+            # Fetch full state (light details, sensor values) only on first load
+            for device in devices:
+                await self.refresh_device(device, full=True)
+        else:
+            # Preserve lastReportedValue set by turn_on/turn_off
             cache = {d["nodeId"]: d for d in self._devices_cache}
             for device in devices:
                 node_id = device["nodeId"]
                 if node_id in cache and "lastReportedValue" in cache[node_id]:
-                    device.setdefault("lastReportedValue", cache[node_id]["lastReportedValue"])
+                    device["lastReportedValue"] = cache[node_id]["lastReportedValue"]
+
         self._devices_cache = devices
         return devices
 
