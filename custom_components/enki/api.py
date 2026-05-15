@@ -62,8 +62,8 @@ class API:
                     "password": self.pwd},
                 proxy=proxy,) as resp:
 
+                    response = await resp.json()
                     if resp.status == 200:
-                        response = await resp.json()
                         LOGGER.debug("connect : " + str(response))
                         self._access_token = response["access_token"]
                         self._refresh_token = response["refresh_token"]
