@@ -16,7 +16,7 @@ from .const import (
     ENKI_REFERENTIEL_API_KEY,
     ENKI_LIGHTS_API_KEY)
 
-proxy = None
+proxy = "http://192.168.1.20:9090"
 
 @dataclass
 class Device:
