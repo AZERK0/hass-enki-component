@@ -83,12 +83,14 @@ class API:
         """Get list of homes."""
         await self.check_connected()
         homes = []
-        LOGGER.debug("get_homes token_type=%s token=%s key=%s", self._token_type, self._access_token[:20], ENKI_HOME_API_KEY)
         async with aiohttp.ClientSession() as session, session.request(
              method="GET",
              url=f"{ENKI_URL}/api-enki-home-prod/v1/homes",
              headers={"Authorization": f"{self._token_type} {self._access_token}",
-                      "X-Gateway-APIKey": ENKI_HOME_API_KEY},
+                      "X-Gateway-APIKey": ENKI_HOME_API_KEY,
+                      "User-Agent": "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0",
+                      "Accept": "*/*",
+                      "Accept-Language": "fr-FR,fr;q=0.9"},
              proxy=proxy,) as resp:
 
                 response = await resp.json()
@@ -113,7 +115,10 @@ class API:
              method="GET",
              url=f"{ENKI_URL}/api-enki-mobile-bff-prod/v1/dashboard/homes/{home_id}?hasGroups=true",
              headers={"Authorization": f"{self._token_type} {self._access_token}",
-                      "X-Gateway-APIKey": ENKI_BFF_API_KEY},
+                      "X-Gateway-APIKey": ENKI_BFF_API_KEY,
+                      "User-Agent": "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0",
+                      "Accept": "*/*",
+                      "Accept-Language": "fr-FR,fr;q=0.9"},
              proxy=proxy,) as resp:
                 devices = []
                 response = await resp.json()
@@ -166,7 +171,9 @@ class API:
             url=f"{ENKI_URL}/api-enki-node-agg-prod/v1/nodes/{node_id}",
             headers={"Authorization": f"{self._token_type} {self._access_token}",
                     "X-Gateway-APIKey": ENKI_NODE_API_KEY,
-                    "homeId": f"{home_id}"},
+                    "homeId": f"{home_id}",
+                    "User-Agent": "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0",
+                    "Accept": "*/*"},
             proxy=proxy,) as resp:
 
                 response = await resp.json()
@@ -184,7 +191,9 @@ class API:
             method="GET",
             url=f"{ENKI_URL}/api-enki-referentiel-agg-prod/v1/devices/{id}?version=2.15.0",
             headers={"Authorization": f"{self._token_type} {self._access_token}",
-                    "X-Gateway-APIKey": ENKI_REFERENTIEL_API_KEY},
+                    "X-Gateway-APIKey": ENKI_REFERENTIEL_API_KEY,
+                    "User-Agent": "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0",
+                    "Accept": "*/*"},
             proxy=proxy,) as resp:
 
                 response = await resp.json()
@@ -203,7 +212,9 @@ class API:
              url=f"{ENKI_URL}/api-enki-lighting-prod/v1/lighting/{node_id}/check-light-state",
              headers={"Authorization": f"{self._token_type} {self._access_token}",
                       "homeId": home_id,
-                      "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY},
+                      "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY,
+                      "User-Agent": "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0",
+                      "Accept": "*/*"},
              proxy=proxy,) as resp:
 
                 response = await resp.json()
@@ -225,7 +236,9 @@ class API:
             url=f"{ENKI_URL}/api-enki-lighting-prod/v1/lighting/{node_id}/change-light-state",
             headers={"Authorization": f"{self._token_type} {self._access_token}",
                     "homeId": home_id,
-                    "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY},
+                    "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY,
+                    "User-Agent": "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0",
+                    "Accept": "*/*"},
             proxy=proxy,
             json=data) as resp:
 
