@@ -16,7 +16,7 @@ from .const import (
     ENKI_REFERENTIEL_API_KEY,
     ENKI_LIGHTS_API_KEY)
 
-proxy = "http://192.168.1.20:9090"
+proxy = None
 
 @dataclass
 class Device:
@@ -60,7 +60,7 @@ class API:
                     "client_id": "enki-front",
                     "username": self.user,
                     "password": self.pwd},
-                proxy=proxy, ssl=False,) as resp:
+                proxy=proxy,) as resp:
 
                     response = await resp.json()
                     if resp.status == 200:
@@ -83,12 +83,13 @@ class API:
         """Get list of homes."""
         await self.check_connected()
         homes = []
+        LOGGER.debug("get_homes token_type=%s token=%s key=%s", self._token_type, self._access_token[:20], ENKI_HOME_API_KEY)
         async with aiohttp.ClientSession() as session, session.request(
              method="GET",
              url=f"{ENKI_URL}/api-enki-home-prod/v1/homes",
              headers={"Authorization": f"{self._token_type} {self._access_token}",
                       "X-Gateway-APIKey": ENKI_HOME_API_KEY},
-             proxy=proxy, ssl=False,) as resp:
+             proxy=proxy,) as resp:
 
                 response = await resp.json()
                 if resp.status == 200:
@@ -113,7 +114,7 @@ class API:
              url=f"{ENKI_URL}/api-enki-mobile-bff-prod/v1/dashboard/homes/{home_id}?hasGroups=true",
              headers={"Authorization": f"{self._token_type} {self._access_token}",
                       "X-Gateway-APIKey": ENKI_BFF_API_KEY},
-             proxy=proxy, ssl=False,) as resp:
+             proxy=proxy,) as resp:
                 devices = []
                 response = await resp.json()
                 if resp.status == 200:
@@ -166,7 +167,7 @@ class API:
             headers={"Authorization": f"{self._token_type} {self._access_token}",
                     "X-Gateway-APIKey": ENKI_NODE_API_KEY,
                     "homeId": f"{home_id}"},
-            proxy=proxy, ssl=False,) as resp:
+            proxy=proxy,) as resp:
 
                 response = await resp.json()
                 if resp.status == 200:
@@ -184,7 +185,7 @@ class API:
             url=f"{ENKI_URL}/api-enki-referentiel-agg-prod/v1/devices/{id}?version=2.15.0",
             headers={"Authorization": f"{self._token_type} {self._access_token}",
                     "X-Gateway-APIKey": ENKI_REFERENTIEL_API_KEY},
-            proxy=proxy, ssl=False,) as resp:
+            proxy=proxy,) as resp:
 
                 response = await resp.json()
                 if resp.status == 200:
@@ -203,7 +204,7 @@ class API:
              headers={"Authorization": f"{self._token_type} {self._access_token}",
                       "homeId": home_id,
                       "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY},
-             proxy=proxy, ssl=False,) as resp:
+             proxy=proxy,) as resp:
 
                 response = await resp.json()
                 if resp.status == 200:
@@ -225,7 +226,7 @@ class API:
             headers={"Authorization": f"{self._token_type} {self._access_token}",
                     "homeId": home_id,
                     "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY},
-            proxy=proxy, ssl=False,
+            proxy=proxy,
             json=data) as resp:
 
                 if resp.status != 202:
