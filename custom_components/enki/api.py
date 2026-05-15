@@ -17,13 +17,21 @@ from .const import (
     ENKI_LIGHTS_API_KEY)
 
 proxy = None
+ENKI_USER_AGENT = "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0"
+
+def _session():
+    return aiohttp.ClientSession(headers={
+        "User-Agent": ENKI_USER_AGENT,
+        "Accept": "*/*",
+        "Accept-Language": "fr-FR,fr;q=0.9",
+    })
 
 @dataclass
 class Device:
     """API device."""
     home_id: str
-    device_id: str #device_id represents the type of device used (Hw reference)
-    node_id: str #node_id represents the physical device (toke,)
+    device_id: str
+    node_id: str
     device_name: str
 
 class API:
@@ -41,25 +49,22 @@ class API:
 
     async def check_connected(self) -> bool:
         """Tell if token is still valid"""
-        if not hasattr(self, '_access_token') or time.time()>self._tokenExpiresTime:
-             await self.connect()
+        if not hasattr(self, '_access_token') or time.time() > self._tokenExpiresTime:
+            await self.connect()
         return True
 
     async def connect(self) -> bool:
         """Connect to the Enki API."""
         try:
-            async with aiohttp.ClientSession() as session, session.request(
+            async with _session() as session, session.request(
                 method="POST",
                 url=ENKI_OIDC_URL,
                 headers={"Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
-                         "User-Agent": "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0",
-                         "X-Correlation-Id": f"iOS_{str(uuid.uuid4()).upper()}",
-                         "Accept": "*/*",
-                         "Accept-Language": "fr-FR,fr;q=0.9"},
-                data={"grant_type":"password",
-                    "client_id": "enki-front",
-                    "username": self.user,
-                    "password": self.pwd},
+                         "X-Correlation-Id": f"iOS_{str(uuid.uuid4()).upper()}"},
+                data={"grant_type": "password",
+                      "client_id": "enki-front",
+                      "username": self.user,
+                      "password": self.pwd},
                 proxy=proxy,) as resp:
 
                     response = await resp.json()
@@ -83,14 +88,11 @@ class API:
         """Get list of homes."""
         await self.check_connected()
         homes = []
-        async with aiohttp.ClientSession() as session, session.request(
+        async with _session() as session, session.request(
              method="GET",
              url=f"{ENKI_URL}/api-enki-home-prod/v1/homes",
              headers={"Authorization": f"{self._token_type} {self._access_token}",
-                      "X-Gateway-APIKey": ENKI_HOME_API_KEY,
-                      "User-Agent": "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0",
-                      "Accept": "*/*",
-                      "Accept-Language": "fr-FR,fr;q=0.9"},
+                      "X-Gateway-APIKey": ENKI_HOME_API_KEY},
              proxy=proxy,) as resp:
 
                 response = await resp.json()
@@ -104,61 +106,56 @@ class API:
                     raise ValueError("bad credentials")
 
     def merge_properties(self, device, properties):
-         for prop in properties:
+        for prop in properties:
             if prop != "id":
                 device[prop] = properties[prop]
 
     async def get_items_in_section_for_home(self, home_id) -> list[dict[str, Any]]:
-            """Get sections in home."""
-            await self.check_connected()
-            async with aiohttp.ClientSession() as session, session.request(
+        """Get sections in home."""
+        await self.check_connected()
+        async with _session() as session, session.request(
              method="GET",
              url=f"{ENKI_URL}/api-enki-mobile-bff-prod/v1/dashboard/homes/{home_id}?hasGroups=true",
              headers={"Authorization": f"{self._token_type} {self._access_token}",
-                      "X-Gateway-APIKey": ENKI_BFF_API_KEY,
-                      "User-Agent": "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0",
-                      "Accept": "*/*",
-                      "Accept-Language": "fr-FR,fr;q=0.9"},
+                      "X-Gateway-APIKey": ENKI_BFF_API_KEY},
              proxy=proxy,) as resp:
-                devices = []
-                response = await resp.json()
-                if resp.status == 200:
-                    LOGGER.debug("get_items_in_section_for_home : " + str(response))
-                    for section in response["sections"]:
-                        for item in section["items"]:
-                            if 'deviceId' not in item["metadata"].keys():
-                                continue
-                            device = {
-                                "homeId": home_id,
-                                "deviceId": item["metadata"]["deviceId"],
-                                "nodeId": item["metadata"]["nodeId"],
-                                "deviceName": item["title"]["label"],
-                                "state": item["state"],
-                                "isEnabled": item["isEnabled"]
-                            }
-                            devices.append(device)
+            devices = []
+            response = await resp.json()
+            if resp.status == 200:
+                LOGGER.debug("get_items_in_section_for_home : " + str(response))
+                for section in response["sections"]:
+                    for item in section["items"]:
+                        if 'deviceId' not in item["metadata"].keys():
+                            continue
+                        device = {
+                            "homeId": home_id,
+                            "deviceId": item["metadata"]["deviceId"],
+                            "nodeId": item["metadata"]["nodeId"],
+                            "deviceName": item["title"]["label"],
+                            "state": item["state"],
+                            "isEnabled": item["isEnabled"]
+                        }
+                        devices.append(device)
 
-                            node_info = await self.get_node(home_id, device.get("nodeId"))
-                            self.merge_properties(device, node_info)
+                        node_info = await self.get_node(home_id, device.get("nodeId"))
+                        self.merge_properties(device, node_info)
 
-                            device_info = await self.get_device(device.get("deviceId"))
-                            self.merge_properties(device, device_info)
+                        device_info = await self.get_device(device.get("deviceId"))
+                        self.merge_properties(device, device_info)
 
-                            await self.refresh_device(device)
+                        await self.refresh_device(device)
 
-                            LOGGER.debug("device : " + repr(device))
-                    return devices
-
-                else:
-                    LOGGER.error("Error on get_items_in_section_for_home. status %s, response %s", resp.status, str(response))
-                    raise ValueError("bad credentials")
+                        LOGGER.debug("device : " + repr(device))
+                return devices
+            else:
+                LOGGER.error("Error on get_items_in_section_for_home. status %s, response %s", resp.status, str(response))
+                raise ValueError("bad credentials")
 
     async def refresh_device(self, device):
         """Update device details"""
         device_info = await self.get_device(device.get("deviceId"))
         self.merge_properties(device, device_info)
         if device["type"] == "lights" and device["isEnabled"]:
-            # get lights details (on/off, brightness, temperature, etc)
             light_details = await self.get_light_details(device.get("homeId"), device.get("nodeId"))
             self.merge_properties(device, light_details)
         return device
@@ -166,14 +163,12 @@ class API:
     async def get_node(self, home_id, node_id):
         """Get details on a node."""
         await self.check_connected()
-        async with aiohttp.ClientSession() as session, session.request(
+        async with _session() as session, session.request(
             method="GET",
             url=f"{ENKI_URL}/api-enki-node-agg-prod/v1/nodes/{node_id}",
             headers={"Authorization": f"{self._token_type} {self._access_token}",
                     "X-Gateway-APIKey": ENKI_NODE_API_KEY,
-                    "homeId": f"{home_id}",
-                    "User-Agent": "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0",
-                    "Accept": "*/*"},
+                    "homeId": f"{home_id}"},
             proxy=proxy,) as resp:
 
                 response = await resp.json()
@@ -187,13 +182,11 @@ class API:
     async def get_device(self, id):
         """Get details on a device."""
         await self.check_connected()
-        async with aiohttp.ClientSession() as session, session.request(
+        async with _session() as session, session.request(
             method="GET",
             url=f"{ENKI_URL}/api-enki-referentiel-agg-prod/v1/devices/{id}?version=2.15.0",
             headers={"Authorization": f"{self._token_type} {self._access_token}",
-                    "X-Gateway-APIKey": ENKI_REFERENTIEL_API_KEY,
-                    "User-Agent": "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0",
-                    "Accept": "*/*"},
+                    "X-Gateway-APIKey": ENKI_REFERENTIEL_API_KEY},
             proxy=proxy,) as resp:
 
                 response = await resp.json()
@@ -204,17 +197,15 @@ class API:
                     LOGGER.error("Error on get_device. status %s, response %s", resp.status, str(response))
                     raise ValueError("bad credentials")
 
-    async def get_light_details(self,home_id, node_id):
-         """Get light state"""
-         await self.check_connected()
-         async with aiohttp.ClientSession() as session, session.request(
+    async def get_light_details(self, home_id, node_id):
+        """Get light state"""
+        await self.check_connected()
+        async with _session() as session, session.request(
              method="GET",
              url=f"{ENKI_URL}/api-enki-lighting-prod/v1/lighting/{node_id}/check-light-state",
              headers={"Authorization": f"{self._token_type} {self._access_token}",
                       "homeId": home_id,
-                      "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY,
-                      "User-Agent": "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0",
-                      "Accept": "*/*"},
+                      "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY},
              proxy=proxy,) as resp:
 
                 response = await resp.json()
@@ -231,14 +222,12 @@ class API:
         data = (await self.get_light_details(home_id, node_id))["lastReportedValue"]
         data[parameter] = value
 
-        async with aiohttp.ClientSession() as session, session.request(
+        async with _session() as session, session.request(
             method="POST",
             url=f"{ENKI_URL}/api-enki-lighting-prod/v1/lighting/{node_id}/change-light-state",
             headers={"Authorization": f"{self._token_type} {self._access_token}",
                     "homeId": home_id,
-                    "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY,
-                    "User-Agent": "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0",
-                    "Accept": "*/*"},
+                    "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY},
             proxy=proxy,
             json=data) as resp:
 
@@ -256,7 +245,6 @@ class API:
         devices = []
         for home in homes:
             devices.extend(await self.get_items_in_section_for_home(home))
-
         return devices
 
 class APIAuthError(Exception):
