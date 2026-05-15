@@ -12,8 +12,8 @@ DEFAULT_SCAN_INTERVAL = 5
 
 ENKI_OIDC_URL = "https://keycloak-prod.iot.leroymerlin.fr/realms/enki/protocol/openid-connect/token"
 ENKI_URL = "https://enki.api.devportal.adeo.cloud"
-ENKI_HOME_API_KEY = "FULsxyI3x1f7MtLVOsP6V1DeAPmBQJCB"
-ENKI_BFF_API_KEY = "Bco7qBHRHOQiSVcEHdgS0rijpebMBwkB"
-ENKI_NODE_API_KEY = "UBb0Kv6xXpG6bOvD8VZ9A63uxqQ4G1A3"
-ENKI_REFERENTIEL_API_KEY = "3uk9rlaIUgBsz1tEPV7GQMhhGfRwPFJY"
+ENKI_HOME_API_KEY = "EtsvndBsusfaAXTZsDmeX2s3o7dhNAT2"
+ENKI_BFF_API_KEY = "hTFx7uzWpn2JRpeylsZRRK00hd7lxH3V"
+ENKI_NODE_API_KEY = "aMmVpSOOWjEGz7f99caaPdUPMNoAIabj"
+ENKI_REFERENTIEL_API_KEY = "MiodFO5my5FR5U1aWHfiGMgFSuL6eOmB"
 ENKI_LIGHTS_API_KEY = "3OVsNulRsUXfr7Hze54OHx8l6qDu2UcE"
