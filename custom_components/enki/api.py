@@ -16,11 +16,13 @@ from .const import (
     ENKI_REFERENTIEL_API_KEY,
     ENKI_LIGHTS_API_KEY)
 
-proxy = None
+proxy = "http://192.168.1.20:9090"
 ENKI_USER_AGENT = "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0"
 
 def _session():
+    connector = aiohttp.TCPConnector(ssl=False)
     return aiohttp.ClientSession(
+        connector=connector,
         headers={
             "User-Agent": ENKI_USER_AGENT,
             "Accept": "*/*",
