@@ -20,11 +20,14 @@ proxy = None
 ENKI_USER_AGENT = "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0"
 
 def _session():
-    return aiohttp.ClientSession(headers={
-        "User-Agent": ENKI_USER_AGENT,
-        "Accept": "*/*",
-        "Accept-Language": "fr-FR,fr;q=0.9",
-    })
+    return aiohttp.ClientSession(
+        headers={
+            "User-Agent": ENKI_USER_AGENT,
+            "Accept": "*/*",
+            "Accept-Language": "fr-FR,fr;q=0.9",
+        },
+        skip_auto_headers={"User-Agent"},
+    )
 
 @dataclass
 class Device:
