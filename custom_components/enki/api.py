@@ -21,7 +21,6 @@ ENKI_USER_AGENT = "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0"
 
 def _session():
     return aiohttp.ClientSession(
-        connector=connector,
         headers={
             "User-Agent": ENKI_USER_AGENT,
             "Accept": "*/*",
