@@ -152,7 +152,7 @@ class API:
                         device_info = await self.get_device(device.get("deviceId"))
                         self.merge_properties(device, device_info)
 
-                        await self.refresh_device(device)
+                        await self.refresh_device(device, full=True)
 
                         LOGGER.debug("device : " + repr(device))
                 return devices
@@ -160,10 +160,12 @@ class API:
                 LOGGER.error("Error on get_items_in_section_for_home. status %s, response %s", resp.status, str(response))
                 raise ValueError("bad credentials")
 
-    async def refresh_device(self, device):
+    async def refresh_device(self, device, full=False):
         """Update device details"""
         device_info = await self.get_device(device.get("deviceId"))
         self.merge_properties(device, device_info)
+        if not full:
+            return device
         if device["type"] == "lights" and device["isEnabled"]:
             light_details = await self.get_light_details(device.get("homeId"), device.get("nodeId"))
             self.merge_properties(device, light_details)
@@ -339,6 +341,14 @@ class API:
         devices = []
         for home in homes:
             devices.extend(await self.get_items_in_section_for_home(home))
+        # Preserve lastReportedValue from previous fetch to avoid overwriting local state
+        if hasattr(self, '_devices_cache'):
+            cache = {d["nodeId"]: d for d in self._devices_cache}
+            for device in devices:
+                node_id = device["nodeId"]
+                if node_id in cache and "lastReportedValue" in cache[node_id]:
+                    device.setdefault("lastReportedValue", cache[node_id]["lastReportedValue"])
+        self._devices_cache = devices
         return devices
 
 class APIAuthError(Exception):
