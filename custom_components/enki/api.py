@@ -4,6 +4,7 @@ import aiohttp
 from dataclasses import dataclass
 from typing import Any
 import time
+import uuid
 
 from .const import (
     LOGGER,
@@ -50,7 +51,11 @@ class API:
             async with aiohttp.ClientSession() as session, session.request(
                 method="POST",
                 url=ENKI_OIDC_URL,
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                headers={"Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
+                         "User-Agent": "Enki/389 CFNetwork/3860.500.112 Darwin/25.4.0",
+                         "X-Correlation-Id": f"iOS_{str(uuid.uuid4()).upper()}",
+                         "Accept": "*/*",
+                         "Accept-Language": "fr-FR,fr;q=0.9"},
                 data={"grant_type":"password",
                     "client_id": "enki-front",
                     "username": self.user,
