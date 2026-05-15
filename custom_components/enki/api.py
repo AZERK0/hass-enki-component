@@ -27,6 +27,7 @@ def _session():
             "User-Agent": ENKI_USER_AGENT,
             "Accept": "*/*",
             "Accept-Language": "fr-FR,fr;q=0.9",
+            "X-Correlation-Id": f"iOS_{str(uuid.uuid4()).upper()}",
         },
         skip_auto_headers={"User-Agent"},
     )
