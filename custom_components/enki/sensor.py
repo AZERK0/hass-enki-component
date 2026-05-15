@@ -104,7 +104,7 @@ class EnkiPresenceSensor(EnkiSensorBase):
         value = self._get_sensor_value()
         if value is None:
             return None
-        return "detected" if value else "clear"
+        return "detected" if value == "MOTION_DETECTED" else "clear"
 
 
 class EnkiLuminositySensor(EnkiSensorBase):
@@ -118,6 +118,3 @@ class EnkiLuminositySensor(EnkiSensorBase):
 class EnkiBatterySensor(EnkiSensorBase):
     _sensor_key = "batteryValue"
     _sensor_suffix = "battery"
-    _attr_device_class = SensorDeviceClass.BATTERY
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = PERCENTAGE
