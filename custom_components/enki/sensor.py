@@ -7,6 +7,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
+
 from homeassistant.const import (
     PERCENTAGE,
     UnitOfTemperature,
@@ -97,7 +98,6 @@ class EnkiHumiditySensor(EnkiSensorBase):
 class EnkiPresenceSensor(EnkiSensorBase):
     _sensor_key = "motionDetected"
     _sensor_suffix = "presence"
-    _attr_device_class = SensorDeviceClass.OCCUPANCY
 
     @property
     def native_value(self):
