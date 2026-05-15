@@ -88,7 +88,7 @@ class API:
              url=f"{ENKI_URL}/api-enki-home-prod/v1/homes",
              headers={"Authorization": f"{self._token_type} {self._access_token}",
                       "X-Gateway-APIKey": ENKI_HOME_API_KEY},
-             proxy=proxy,) as resp:
+             proxy=proxy, ssl=False,) as resp:
 
                 response = await resp.json()
                 if resp.status == 200:
@@ -113,7 +113,7 @@ class API:
              url=f"{ENKI_URL}/api-enki-mobile-bff-prod/v1/dashboard/homes/{home_id}?hasGroups=true",
              headers={"Authorization": f"{self._token_type} {self._access_token}",
                       "X-Gateway-APIKey": ENKI_BFF_API_KEY},
-             proxy=proxy,) as resp:
+             proxy=proxy, ssl=False,) as resp:
                 devices = []
                 response = await resp.json()
                 if resp.status == 200:
@@ -166,7 +166,7 @@ class API:
             headers={"Authorization": f"{self._token_type} {self._access_token}",
                     "X-Gateway-APIKey": ENKI_NODE_API_KEY,
                     "homeId": f"{home_id}"},
-            proxy=proxy,) as resp:
+            proxy=proxy, ssl=False,) as resp:
 
                 response = await resp.json()
                 if resp.status == 200:
@@ -184,7 +184,7 @@ class API:
             url=f"{ENKI_URL}/api-enki-referentiel-agg-prod/v1/devices/{id}?version=2.15.0",
             headers={"Authorization": f"{self._token_type} {self._access_token}",
                     "X-Gateway-APIKey": ENKI_REFERENTIEL_API_KEY},
-            proxy=proxy,) as resp:
+            proxy=proxy, ssl=False,) as resp:
 
                 response = await resp.json()
                 if resp.status == 200:
@@ -203,7 +203,7 @@ class API:
              headers={"Authorization": f"{self._token_type} {self._access_token}",
                       "homeId": home_id,
                       "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY},
-             proxy=proxy,) as resp:
+             proxy=proxy, ssl=False,) as resp:
 
                 response = await resp.json()
                 if resp.status == 200:
@@ -225,7 +225,7 @@ class API:
             headers={"Authorization": f"{self._token_type} {self._access_token}",
                     "homeId": home_id,
                     "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY},
-            proxy=proxy,
+            proxy=proxy, ssl=False,
             json=data) as resp:
 
                 if resp.status != 202:
