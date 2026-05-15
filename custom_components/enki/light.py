@@ -96,9 +96,9 @@ class EnkiLight(EnkiBaseEntity, LightEntity):
         """Return if the binary sensor is on."""
         # This needs to enumerate to true or false
         last_reported_values = self.coordinator.get_device_parameter(self.node_id, "lastReportedValue")
-        return (
-            last_reported_values["power"] == "ON"
-        )
+        if not last_reported_values:
+            return None
+        return last_reported_values.get("power") == "ON"
 
     def closest_temp_value(self, target_value):
         return min(self._color_temp_values, key=lambda x: abs(x - target_value)) 
