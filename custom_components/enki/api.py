@@ -201,7 +201,8 @@ class API:
              method="GET",
              url=f"{ENKI_URL}/api-enki-lighting-prod/v1/lighting/{node_id}/check-light-state",
              headers={"Authorization": f"{self._token_type} {self._access_token}",
-                      "homeId": home_id},
+                      "homeId": home_id,
+                      "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY},
              proxy=proxy,) as resp:
 
                 response = await resp.json()
@@ -222,7 +223,8 @@ class API:
             method="POST",
             url=f"{ENKI_URL}/api-enki-lighting-prod/v1/lighting/{node_id}/change-light-state",
             headers={"Authorization": f"{self._token_type} {self._access_token}",
-                    "homeId": home_id},
+                    "homeId": home_id,
+                    "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY},
             proxy=proxy,
             json=data) as resp:
 
