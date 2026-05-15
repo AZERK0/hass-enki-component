@@ -1,6 +1,7 @@
 """Enki API."""
 
 import aiohttp
+import ssl
 from dataclasses import dataclass
 from typing import Any
 import time
@@ -17,6 +18,9 @@ from .const import (
     ENKI_LIGHTS_API_KEY)
 
 proxy = "http://192.168.1.20:9090"
+ssl_context = ssl.create_default_context()
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
 
 @dataclass
 class Device:
@@ -60,7 +64,7 @@ class API:
                     "client_id": "enki-front",
                     "username": self.user,
                     "password": self.pwd},
-                proxy=proxy,) as resp:
+                proxy=proxy, ssl=ssl_context,) as resp:
 
                     response = await resp.json()
                     if resp.status == 200:
