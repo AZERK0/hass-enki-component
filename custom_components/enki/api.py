@@ -68,12 +68,13 @@ class API:
                         self._access_token = response["access_token"]
                         self._refresh_token = response["refresh_token"]
                         self._token_type = response["token_type"]
-                        tokenExpiresTime = time.time() + response["expires_in"]
-                        self._tokenExpiresTime = tokenExpiresTime
+                        self._tokenExpiresTime = time.time() + response["expires_in"]
                         return True
                     else:
                         LOGGER.error("Error connecting to api. status %s, response %s", resp.status, str(response))
                         raise APIAuthError("Error connecting to api. Invalid username or password.")
+        except APIAuthError:
+            raise
         except Exception as e:
             raise APIConnectionError("Error connecting to api : " + repr(e))
 
@@ -89,8 +90,8 @@ class API:
                       "X-Gateway-APIKey": ENKI_HOME_API_KEY},
              proxy=proxy,) as resp:
 
+                response = await resp.json()
                 if resp.status == 200:
-                    response = await resp.json()
                     LOGGER.debug("get_homes : " + str(response))
                     for home in response["items"]:
                         homes.append(home["id"])
@@ -114,8 +115,8 @@ class API:
                       "X-Gateway-APIKey": ENKI_BFF_API_KEY},
              proxy=proxy,) as resp:
                 devices = []
+                response = await resp.json()
                 if resp.status == 200:
-                    response = await resp.json()
                     LOGGER.debug("get_items_in_section_for_home : " + str(response))
                     for section in response["sections"]:
                         for item in section["items"]:
@@ -133,7 +134,7 @@ class API:
 
                             node_info = await self.get_node(home_id, device.get("nodeId"))
                             self.merge_properties(device, node_info)
-                            
+
                             device_info = await self.get_device(device.get("deviceId"))
                             self.merge_properties(device, device_info)
 
@@ -141,12 +142,12 @@ class API:
 
                             LOGGER.debug("device : " + repr(device))
                     return devices
-                  
+
                 else:
                     LOGGER.error("Error on get_items_in_section_for_home. status %s, response %s", resp.status, str(response))
                     raise ValueError("bad credentials")
 
-    async def refresh_device(self, device): 
+    async def refresh_device(self, device):
         """Update device details"""
         device_info = await self.get_device(device.get("deviceId"))
         self.merge_properties(device, device_info)
@@ -167,12 +168,10 @@ class API:
                     "homeId": f"{home_id}"},
             proxy=proxy,) as resp:
 
+                response = await resp.json()
                 if resp.status == 200:
-                    response = await resp.json()
                     LOGGER.debug("get_node : " + str(response))
-                    #print("\t\t" + response["icon"] + " " + response["factoryId"] + " " + response["modelNumber"])
                     return response
-
                 else:
                     LOGGER.error("Error on get_node. status %s, response %s", resp.status, str(response))
                     raise ValueError("bad credentials")
@@ -187,11 +186,10 @@ class API:
                     "X-Gateway-APIKey": ENKI_REFERENTIEL_API_KEY},
             proxy=proxy,) as resp:
 
+                response = await resp.json()
                 if resp.status == 200:
-                    response = await resp.json()
                     LOGGER.debug("get_device : " + str(response))
                     return response
-
                 else:
                     LOGGER.error("Error on get_device. status %s, response %s", resp.status, str(response))
                     raise ValueError("bad credentials")
@@ -207,21 +205,20 @@ class API:
                       "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY},
              proxy=proxy,) as resp:
 
+                response = await resp.json()
                 if resp.status == 200:
-                    response = await resp.json()
                     LOGGER.debug("get_light_details : " + str(response))
                     return response
-
                 else:
                     LOGGER.error("Error on get_light_details. status %s, response %s", resp.status, str(response))
                     raise ValueError("bad credentials")
 
     async def change_light_state(self, home_id, node_id, parameter, value):
         await self.check_connected()
-        
+
         data = (await self.get_light_details(home_id, node_id))["lastReportedValue"]
         data[parameter] = value
-        
+
         async with aiohttp.ClientSession() as session, session.request(
             method="POST",
             url=f"{ENKI_URL}/api-enki-lighting-prod/v1/lighting/{node_id}/change-light-state",
