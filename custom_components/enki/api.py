@@ -170,7 +170,7 @@ class API:
         elif device["type"] == "sensors" and device["isEnabled"]:
             sensor_details = await self.get_sensor_details(device.get("homeId"), device.get("nodeId"), device.get("capabilities", []))
             self.merge_properties(device, sensor_details)
-        elif "switch_electrical_power" in device.get("capabilities", []) and device["isEnabled"]:
+        elif device["type"] == "outlets" and device["isEnabled"]:
             power_details = await self.get_power_details(device.get("homeId"), device.get("nodeId"))
             self.merge_properties(device, power_details)
         return device

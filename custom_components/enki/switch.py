@@ -23,8 +23,7 @@ async def async_setup_entry(
     switches = [
         EnkiSwitch(coordinator, device)
         for device in coordinator.data
-        if "switch_electrical_power" in device.get("capabilities", [])
-        and device.get("type") != "lights"
+        if device.get("type") == "outlets"
     ]
 
     async_add_entities(switches)
