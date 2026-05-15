@@ -80,7 +80,7 @@ class EnkiSensorBase(EnkiBaseEntity, SensorEntity):
 
 
 class EnkiTemperatureSensor(EnkiSensorBase):
-    _sensor_key = "currentTemperature"
+    _sensor_key = "temperatureValue"
     _sensor_suffix = "temperature"
     _attr_device_class = SensorDeviceClass.TEMPERATURE
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -88,7 +88,7 @@ class EnkiTemperatureSensor(EnkiSensorBase):
 
 
 class EnkiHumiditySensor(EnkiSensorBase):
-    _sensor_key = "currentHumidity"
+    _sensor_key = "humidityValue"
     _sensor_suffix = "humidity"
     _attr_device_class = SensorDeviceClass.HUMIDITY
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -96,7 +96,7 @@ class EnkiHumiditySensor(EnkiSensorBase):
 
 
 class EnkiPresenceSensor(EnkiSensorBase):
-    _sensor_key = "motionDetected"
+    _sensor_key = "presenceValue"
     _sensor_suffix = "presence"
 
     @property
@@ -108,7 +108,7 @@ class EnkiPresenceSensor(EnkiSensorBase):
 
 
 class EnkiLuminositySensor(EnkiSensorBase):
-    _sensor_key = "illuminanceLevel"
+    _sensor_key = "illuminanceValue"
     _sensor_suffix = "luminosity"
     _attr_device_class = SensorDeviceClass.ILLUMINANCE
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -116,7 +116,7 @@ class EnkiLuminositySensor(EnkiSensorBase):
 
 
 class EnkiBatterySensor(EnkiSensorBase):
-    _sensor_key = "batteryLevel"
+    _sensor_key = "batteryValue"
     _sensor_suffix = "battery"
     _attr_device_class = SensorDeviceClass.BATTERY
     _attr_state_class = SensorStateClass.MEASUREMENT

@@ -274,21 +274,25 @@ class API:
                         LOGGER.warning("get_sensor_details %s skipped: status %s", path, resp.status)
                         return {}
 
-        if "check_current_temperature" in capabilities or "check_current_humidity" in capabilities:
+        if "check_current_humidity" in capabilities:
             data = await _get(f"/api-enki-temperature-humidity-sensor-prod/v1/sensors/{node_id}/check-current-humidity", ENKI_TEMP_HUMIDITY_API_KEY)
-            result.update(data)
+            result["humidityValue"] = data.get("lastReportedValue")
+
+        if "check_current_temperature" in capabilities:
+            data = await _get(f"/api-enki-temperature-humidity-sensor-prod/v1/sensors/{node_id}/check-current-temperature", ENKI_TEMP_HUMIDITY_API_KEY)
+            result["temperatureValue"] = data.get("lastReportedValue")
 
         if "check_motion_detection" in capabilities:
             data = await _get(f"/api-enki-presence-detector-prod/v1/sensors/{node_id}/check-motion-detection", ENKI_PRESENCE_API_KEY)
-            result.update(data)
+            result["presenceValue"] = data.get("lastReportedValue")
 
         if "check_illuminance_level" in capabilities:
             data = await _get(f"/api-enki-luminosity-sensor-prod/v1/sensors/{node_id}/check-illuminance-level", ENKI_LUMINOSITY_API_KEY)
-            result.update(data)
+            result["illuminanceValue"] = data.get("lastReportedValue")
 
         if "check_battery_health" in capabilities:
             data = await _get(f"/api-enki-battery-health-prod/v1/sensors/{node_id}/check-battery-health", ENKI_BATTERY_API_KEY)
-            result.update(data)
+            result["batteryValue"] = data.get("lastReportedValue")
 
         LOGGER.debug("get_sensor_details %s: %s", node_id, result)
         return result
