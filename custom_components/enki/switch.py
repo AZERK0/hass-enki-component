@@ -47,10 +47,7 @@ class EnkiSwitch(EnkiBaseEntity, SwitchEntity):
         device = self.coordinator.get_node(self._device["nodeId"])
         if device is None:
             return None
-        last_reported = device.get("lastReportedValue")
-        if isinstance(last_reported, str):
-            return last_reported == "ON"
-        return None
+        return device.get("state") == "ON"
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self.coordinator.api.change_power_state(
