@@ -236,10 +236,13 @@ class API:
                     LOGGER.error("Error on get_light_details. status %s, response %s", resp.status, str(response))
                     raise ValueError("bad credentials")
 
-    async def change_light_state(self, home_id, node_id, parameter, value):
+    async def change_light_state(self, home_id, node_id, parameter, value, current_state=None):
         await self.check_connected()
 
-        data = (await self.get_light_details(home_id, node_id))["lastReportedValue"]
+        if current_state is not None:
+            data = dict(current_state)
+        else:
+            data = (await self.get_light_details(home_id, node_id)).get("lastReportedValue", {})
         data[parameter] = value
 
         async with _session() as session, session.request(
