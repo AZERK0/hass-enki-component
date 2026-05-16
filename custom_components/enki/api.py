@@ -347,17 +347,18 @@ class API:
             devices.extend(await self.get_items_in_section_for_home(home))
 
         is_first_load = not hasattr(self, '_devices_cache')
-        if is_first_load:
-            # Fetch full state (light details, sensor values) only on first load
-            for device in devices:
-                await self.refresh_device(device, full=True)
-        else:
-            # Preserve lastReportedValue set by turn_on/turn_off
-            cache = {d["nodeId"]: d for d in self._devices_cache}
-            for device in devices:
-                node_id = device["nodeId"]
-                if node_id in cache and "lastReportedValue" in cache[node_id]:
+        cache = {d["nodeId"]: d for d in self._devices_cache} if not is_first_load else {}
+        for device in devices:
+            node_id = device["nodeId"]
+            if device["type"] == "lights":
+                if is_first_load:
+                    await self.refresh_device(device, full=True)
+                elif node_id in cache and "lastReportedValue" in cache[node_id]:
+                    # Preserve light state set by turn_on/turn_off to avoid race condition
                     device["lastReportedValue"] = cache[node_id]["lastReportedValue"]
+            else:
+                # Always refresh sensors and outlets to get up-to-date values
+                await self.refresh_device(device, full=True)
 
         self._devices_cache = devices
         return devices
