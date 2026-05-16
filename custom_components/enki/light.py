@@ -105,28 +105,28 @@ class EnkiLight(EnkiBaseEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the entity on."""
-        last = self.coordinator.get_device_parameter(self.node_id, "lastReportedValue") or {}
-        state = dict(last)
-        state["power"] = "ON"
+        last = self.coordinator.get_device_parameter(self.node_id, "lastReportedValue")
+        state = dict(last) if last else None
 
-        if "brightness" in kwargs:
-            ha_value = kwargs["brightness"]
-            state["brightness"] = round(ha_value / (255 / self.BRIGHTNESS_SCALE[1]), 2)
-            LOGGER.debug(f"setting brightness to {ha_value} => {state['brightness']}")
-
-        if "color_temp_kelvin" in kwargs:
-            ha_value = kwargs["color_temp_kelvin"]
-            value = self.closest_temp_value(ha_value)
-            state["colorTemperature"] = "T" + str(value) + "K"
-            LOGGER.debug(f"setting color temp to {ha_value} => {value}")
+        if state is not None:
+            state["power"] = "ON"
+            if "brightness" in kwargs:
+                ha_value = kwargs["brightness"]
+                state["brightness"] = round(ha_value / (255 / self.BRIGHTNESS_SCALE[1]), 2)
+                LOGGER.debug(f"setting brightness to {ha_value} => {state['brightness']}")
+            if "color_temp_kelvin" in kwargs:
+                ha_value = kwargs["color_temp_kelvin"]
+                value = self.closest_temp_value(ha_value)
+                state["colorTemperature"] = "T" + str(value) + "K"
+                LOGGER.debug(f"setting color temp to {ha_value} => {value}")
 
         await self.coordinator.api.change_light_state(
             self._device["homeId"], self._device["nodeId"], "power", "ON", current_state=state
         )
         self.coordinator.update_data(self.node_id, "lastReportedValue", "power", "ON")
-        if "brightness" in kwargs:
+        if state is not None and "brightness" in kwargs:
             self.coordinator.update_data(self.node_id, "lastReportedValue", "brightness", state["brightness"])
-        if "color_temp_kelvin" in kwargs:
+        if state is not None and "color_temp_kelvin" in kwargs:
             self.coordinator.update_data(self.node_id, "lastReportedValue", "colorTemperature", state["colorTemperature"])
 
     async def async_turn_off(self, **kwargs: Any) -> None:

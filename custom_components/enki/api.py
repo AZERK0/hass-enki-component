@@ -242,8 +242,9 @@ class API:
         if current_state is not None:
             data = dict(current_state)
         else:
-            data = (await self.get_light_details(home_id, node_id)).get("lastReportedValue", {})
-        data[parameter] = value
+            details = await self.get_light_details(home_id, node_id)
+            data = details.get("lastReportedValue") or {}
+            data[parameter] = value
 
         async with _session() as session, session.request(
             method="POST",
