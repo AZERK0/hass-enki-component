@@ -246,20 +246,25 @@ class API:
             data = details.get("lastReportedValue") or {}
             data[parameter] = value
 
-        async with _session() as session, session.request(
-            method="POST",
-            url=f"{ENKI_URL}/api-enki-lighting-prod/v1/lighting/{node_id}/change-light-state",
-            headers={"Authorization": f"{self._token_type} {self._access_token}",
-                    "homeId": home_id,
-                    "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY},
-            proxy=proxy,
-            json=data) as resp:
+        for attempt in range(2):
+            async with _session() as session, session.request(
+                method="POST",
+                url=f"{ENKI_URL}/api-enki-lighting-prod/v1/lighting/{node_id}/change-light-state",
+                headers={"Authorization": f"{self._token_type} {self._access_token}",
+                        "homeId": home_id,
+                        "X-Gateway-APIKey": ENKI_LIGHTS_API_KEY},
+                proxy=proxy,
+                json=data) as resp:
 
-                if resp.status != 202:
+                    if resp.status == 202:
+                        return
+                    if resp.status == 401 and attempt == 0:
+                        LOGGER.warning("change_light_state: token expired, reconnecting")
+                        await self.connect()
+                        continue
                     response = await resp.json()
-                    LOGGER.debug(resp.status)
                     LOGGER.error("Error on change_light_state. status %s, response %s", resp.status, str(response))
-                    raise ValueError("bad credentials")
+                    raise ValueError("change_light_state failed")
 
     async def get_sensor_details(self, home_id, node_id, capabilities):
         """Get multi-sensor state (temperature, humidity, presence, luminosity, battery)."""
