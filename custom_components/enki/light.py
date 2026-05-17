@@ -131,11 +131,13 @@ class EnkiLight(EnkiBaseEntity, LightEntity):
                 hue, sat = kwargs["hs_color"]
                 state["hue"] = round(hue / 360, 4)
                 state["saturation"] = round(sat / 100, 4)
+                state["colorMode"] = "hs"
                 LOGGER.debug(f"setting hs_color to {hue},{sat} => {state['hue']},{state['saturation']}")
             if "color_temp_kelvin" in kwargs:
                 ha_value = kwargs["color_temp_kelvin"]
                 value = self.closest_temp_value(ha_value)
                 state["colorTemperature"] = "T" + str(value) + "K"
+                state["colorMode"] = "ct"
                 LOGGER.debug(f"setting color temp to {ha_value} => {value}")
 
         await self.coordinator.api.change_light_state(
