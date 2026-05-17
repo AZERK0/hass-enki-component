@@ -154,7 +154,13 @@ class EnkiLight(EnkiBaseEntity, LightEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
-        await self.coordinator.api.change_light_state(self._device["homeId"], self._device["nodeId"], "power", "OFF")
+        last = self.coordinator.get_device_parameter(self.node_id, "lastReportedValue")
+        state = dict(last) if last else None
+        if state is not None:
+            state["power"] = "OFF"
+        await self.coordinator.api.change_light_state(
+            self._device["homeId"], self._device["nodeId"], "power", "OFF", current_state=state
+        )
         self.coordinator.update_data(self.node_id, "lastReportedValue", "power", "OFF")
 
     @property
