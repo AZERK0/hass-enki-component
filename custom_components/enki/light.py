@@ -164,9 +164,13 @@ class EnkiLight(EnkiBaseEntity, LightEntity):
     def hs_color(self) -> tuple[float, float] | None:
         """Return the hue and saturation color value."""
         last = self.coordinator.get_device_parameter(self.node_id, "lastReportedValue")
-        if not last or "hue" not in last or "saturation" not in last:
+        if not last:
             return None
-        return (round(last["hue"] * 360, 1), round(last["saturation"] * 100, 1))
+        hue = last.get("hue")
+        sat = last.get("saturation")
+        if hue is None or sat is None:
+            return None
+        return (round(hue * 360, 1), round(sat * 100, 1))
 
     @property
     def brightness(self) -> Optional[int]:
