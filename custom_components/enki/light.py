@@ -93,7 +93,16 @@ class EnkiLight(EnkiBaseEntity, LightEntity):
                 self._attr_color_mode = ColorMode.ONOFF
 
         if len(self._attr_supported_color_modes) > 1:
-            self._attr_color_mode = ColorMode.UNKNOWN
+            self._attr_color_mode = None  # will be resolved dynamically
+
+    @property
+    def color_mode(self) -> ColorMode | None:
+        if self._attr_color_mode is not None:
+            return self._attr_color_mode
+        last = self.coordinator.get_device_parameter(self.node_id, "lastReportedValue")
+        if last and ("hue" in last or "saturation" in last):
+            return ColorMode.HS
+        return ColorMode.COLOR_TEMP
 
     @property
     def is_on(self) -> bool | None:
