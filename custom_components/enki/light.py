@@ -77,6 +77,10 @@ class EnkiLight(EnkiBaseEntity, LightEntity):
                 self._attr_min_color_temp_kelvin=DEFAULT_MIN_KELVIN
                 self._attr_max_color_temp_kelvin=DEFAULT_MAX_KELVIN
 
+        if "change_hue" in device["capabilities"] and "change_saturation" in device["capabilities"]:
+            self._attr_supported_color_modes.add(ColorMode.HS)
+            self._attr_color_mode = ColorMode.HS
+
         if "change_brightness" in device["capabilities"]:
             if len(self._attr_supported_color_modes) == 0:
                 self._attr_supported_color_modes.add(ColorMode.BRIGHTNESS)
@@ -112,8 +116,13 @@ class EnkiLight(EnkiBaseEntity, LightEntity):
             state["power"] = "ON"
             if "brightness" in kwargs:
                 ha_value = kwargs["brightness"]
-                state["brightness"] = round(ha_value / (255 / self.BRIGHTNESS_SCALE[1]), 2)
+                state["brightness"] = round(ha_value / 255, 2)
                 LOGGER.debug(f"setting brightness to {ha_value} => {state['brightness']}")
+            if "hs_color" in kwargs:
+                hue, sat = kwargs["hs_color"]
+                state["hue"] = round(hue / 360, 4)
+                state["saturation"] = round(sat / 100, 4)
+                LOGGER.debug(f"setting hs_color to {hue},{sat} => {state['hue']},{state['saturation']}")
             if "color_temp_kelvin" in kwargs:
                 ha_value = kwargs["color_temp_kelvin"]
                 value = self.closest_temp_value(ha_value)
@@ -126,6 +135,9 @@ class EnkiLight(EnkiBaseEntity, LightEntity):
         self.coordinator.update_data(self.node_id, "lastReportedValue", "power", "ON")
         if state is not None and "brightness" in kwargs:
             self.coordinator.update_data(self.node_id, "lastReportedValue", "brightness", state["brightness"])
+        if state is not None and "hs_color" in kwargs:
+            self.coordinator.update_data(self.node_id, "lastReportedValue", "hue", state["hue"])
+            self.coordinator.update_data(self.node_id, "lastReportedValue", "saturation", state["saturation"])
         if state is not None and "color_temp_kelvin" in kwargs:
             self.coordinator.update_data(self.node_id, "lastReportedValue", "colorTemperature", state["colorTemperature"])
 
@@ -135,10 +147,20 @@ class EnkiLight(EnkiBaseEntity, LightEntity):
         self.coordinator.update_data(self.node_id, "lastReportedValue", "power", "OFF")
 
     @property
+    def hs_color(self) -> tuple[float, float] | None:
+        """Return the hue and saturation color value."""
+        last = self.coordinator.get_device_parameter(self.node_id, "lastReportedValue")
+        if not last or "hue" not in last or "saturation" not in last:
+            return None
+        return (round(last["hue"] * 360, 1), round(last["saturation"] * 100, 1))
+
+    @property
     def brightness(self) -> Optional[int]:
         """Return the current brightness."""
         last_reported_values = self.coordinator.get_device_parameter(self.node_id, "lastReportedValue")
-        return last_reported_values["brightness"]*(255/self.BRIGHTNESS_SCALE[1])
+        if not last_reported_values or "brightness" not in last_reported_values:
+            return None
+        return round(last_reported_values["brightness"] * 255)
     
     @property
     def color_temp_kelvin(self) -> int | None:
