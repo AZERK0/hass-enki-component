@@ -8,7 +8,7 @@ LOGGER: Logger = getLogger(__package__)
 DOMAIN = "enki"
 NAME = "Enki"
 
-DEFAULT_SCAN_INTERVAL = 30
+DEFAULT_SCAN_INTERVAL = 10
 
 ENKI_OIDC_URL = "https://keycloak-prod.iot.leroymerlin.fr/realms/enki/protocol/openid-connect/token"
 ENKI_URL = "https://enki.api.devportal.adeo.cloud"
