@@ -8,6 +8,7 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 from homeassistant.core import DOMAIN, HomeAssistant
+from homeassistant.components.persistent_notification import async_create
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import API, APIAuthError
@@ -53,6 +54,13 @@ class EnkiCoordinator(DataUpdateCoordinator):
             devices = await self.api.get_devices()
         except APIAuthError as err:
             LOGGER.error(err)
+            async_create(
+                self.hass,
+                "L'intégration Enki ne peut plus se connecter. Les clés API ont peut-être changé. "
+                "Vérifiez les clés dans const.py via Proxyman.",
+                title="⚠️ Enki : clés API invalides",
+                notification_id="enki_api_key_error",
+            )
             raise UpdateFailed(err) from err
         except Exception as err:
             # This will show entities as unavailable by raising UpdateFailed exception
