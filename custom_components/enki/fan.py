@@ -33,7 +33,11 @@ async def async_setup_entry(
 class EnkiCeilingFan(EnkiBaseEntity, FanEntity):
     """Enki ceiling fan."""
 
-    _attr_supported_features = FanEntityFeature.SET_SPEED
+    _attr_supported_features = (
+        FanEntityFeature.SET_SPEED
+        | FanEntityFeature.TURN_ON
+        | FanEntityFeature.TURN_OFF
+    )
     _attr_speed_count = 6
 
     def __init__(self, coordinator: EnkiCoordinator, device: dict[str, Any]) -> None:
@@ -67,6 +71,10 @@ class EnkiCeilingFan(EnkiBaseEntity, FanEntity):
         if device is None or device.get("fanSpeedValue") is None:
             return None
         return round(device["fanSpeedValue"] * 100 / self._attr_speed_count)
+
+    @property
+    def percentage_step(self) -> float:
+        return 100 / self._attr_speed_count
 
     async def async_turn_on(
         self,
