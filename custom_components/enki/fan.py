@@ -33,16 +33,23 @@ async def async_setup_entry(
 class EnkiCeilingFan(EnkiBaseEntity, FanEntity):
     """Enki ceiling fan."""
 
-    _attr_supported_features = (
-        FanEntityFeature.SET_SPEED
-        | FanEntityFeature.TURN_ON
-        | FanEntityFeature.TURN_OFF
-    )
     _attr_speed_count = 6
 
     def __init__(self, coordinator: EnkiCoordinator, device: dict[str, Any]) -> None:
         super().__init__(coordinator, device, "fan")
         self._device = device
+        self._attr_supported_features = self._get_supported_features()
+
+    def _get_supported_features(self) -> FanEntityFeature:
+        return (
+            FanEntityFeature.SET_SPEED
+            | FanEntityFeature.TURN_ON
+            | FanEntityFeature.TURN_OFF
+        )
+
+    @property
+    def supported_features(self) -> FanEntityFeature:
+        return self._get_supported_features()
 
     @property
     def name(self) -> str:
