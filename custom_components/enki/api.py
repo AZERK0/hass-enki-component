@@ -210,9 +210,12 @@ class API:
                 if resp.status == 200:
                     LOGGER.debug("get_device : " + str(response))
                     return response
+                elif resp.status == 404:
+                    LOGGER.warning("get_device skipped for device %s: status %s, response %s", id, resp.status, str(response))
+                    return {}
                 else:
                     LOGGER.error("Error on get_device. status %s, response %s", resp.status, str(response))
-                    raise ValueError("bad credentials")
+                    raise ValueError("get_device failed")
 
     async def get_light_details(self, home_id, node_id):
         """Get light state"""
@@ -355,14 +358,12 @@ class API:
         cache = {d["nodeId"]: d for d in self._devices_cache} if not is_first_load else {}
         for device in devices:
             node_id = device["nodeId"]
-            if device["type"] == "lights":
+            if device.get("type") == "lights":
                 if is_first_load:
                     await self.refresh_device(device, full=True)
                 elif node_id in cache and "lastReportedValue" in cache[node_id]:
-                    # Preserve light state set by turn_on/turn_off to avoid race condition
                     device["lastReportedValue"] = cache[node_id]["lastReportedValue"]
-            else:
-                # Always refresh sensors and outlets to get up-to-date values
+            elif device.get("type") in ("sensors", "outlets"):
                 await self.refresh_device(device, full=True)
 
         self._devices_cache = devices
